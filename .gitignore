@@ -1,0 +1,10 @@
+#Ignore all cache files
+*.pyc
+!spec/*.pyc
+/__pycache__/*
+
+#Ignore database
+/journal.db
+
+#Ignore local python37 environment
+/.env
