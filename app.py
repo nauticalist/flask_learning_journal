@@ -3,6 +3,7 @@ from flask import (Flask, g, render_template, flash, redirect, url_for,
 from flask_bcrypt import check_password_hash
 from flask_login import (LoginManager, login_user, logout_user,
                          login_required, current_user)
+from playhouse.flask_utils import object_list
 
 import config
 import models
@@ -46,24 +47,24 @@ def after_request(response):
 
 @app.route('/')
 def index():
-    return "Hello"
+    entries = models.Entry.select()
+    return object_list('templates/index.html', entries)
 
 
-@app.errorhandler(404)
-def not_found(error):
-    return render_template('404.html'), 404
+# @app.errorhandler(404)
+# def not_found(error):
+#     return render_template('404.html'), 404
 
 
 if __name__ == '__main__':
     models.initialize()
     try:
         models.User.create_user(
-            username='ismail',
-            email='iaksoy@seanapse.io',
-            password='password',
-            admin=True
+            username=config.DEFAULT_USER,
+            email=config.DEFAULT_USER_EMAIL,
+            password=config.DEFAULT_USER_PASSWORD,
         )
     except ValueError:
         pass
 
-    app.run(debug=DEBUG, host=HOST, port=PORT)
+    app.run(debug=config.DEBUG, host=config.HOST, port=config.PORT)

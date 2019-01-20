@@ -40,7 +40,7 @@ class Entry(Model):
     date = DateTimeField()
     time_spent = IntegerField()
     subjects = TextField()
-    resources = TextField()
+    resources = TextField(null=True)
 
     class Meta:
         database = DATABASE
