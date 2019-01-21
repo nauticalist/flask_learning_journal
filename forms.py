@@ -55,7 +55,8 @@ class EntryForm(Form):
         'What You Learned',
         validators=[DataRequired])
     resources = TextAreaField(
-        'Resources to Remember')
+        'Resources to Remember',
+        validators=[])
     # tags = SelectMultipleField(choices=get_tags())
 
 

@@ -45,15 +45,64 @@ def after_request(response):
     return response
 
 
+@app.route('/login', methods=('GET', 'POST'))
+def login():
+    form = forms.LoginForm()
+    if form.validate_on_submit():
+        try:
+            user = models.User.get(models.User.email == form.email.data)
+        except models.DoesNotExist:
+            flash("Your email or password doesn't match!", "error")
+        else:
+            if check_password_hash(user.password, form.password.data):
+                login_user(user)
+                flash("You've been logged in!", "success")
+                return redirect(url_for('index'))
+            else:
+                flash("Your email or password doesn't match!", "error")
+
+    return render_template('login.html', form=form)
+
+
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    flash("You've been logged out! Come back soon!", "success")
+    return redirect(url_for('index'))
+
+
 @app.route('/')
 def index():
     entries = models.Entry.select()
-    return object_list('templates/index.html', entries)
+    if entries:
+        return object_list('index.html', entries)
+    else:
+        return render_template('index.html', entries=entries)
 
 
-# @app.errorhandler(404)
-# def not_found(error):
-#     return render_template('404.html'), 404
+@app.route('/entry', methods=('GET', 'POST'))
+@login_required
+def entry():
+    form = forms.EntryForm()
+    if form.validate_on_submit():
+        models.Entry.create(
+            user=g.user._get_current_object(),
+            slug=form.slug.data,
+            title=form.title.data,
+            date=form.date.data,
+            time_spent=form.time_spent.data,
+            subjects=form.subjects.data.strip(),
+            resources=form.resources.data.strip()
+            )
+        flash('Entry created!', 'success')
+        return redirect(url_for('index'))
+    return render_template('new.html', form=form)
+
+
+@app.errorhandler(404)
+def not_found(error):
+    return render_template('404.html'), 404
 
 
 if __name__ == '__main__':

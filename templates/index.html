@@ -1,46 +1,24 @@
-<!DOCTYPE html>
-<html>
-    <head>
-        <meta charset="utf-8">
-        <meta http-equiv="x-ua-compatible" content="ie=edge">
-        <title>MyJournal</title>
-        <link href="https://fonts.googleapis.com/css?family=Cousine:400" rel="stylesheet" type="text/css">
-        <link href="https://fonts.googleapis.com/css?family=Work+Sans:600" rel="stylesheet" type="text/css">
-        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-        <link rel="stylesheet" href="css/normalize.css">
-        <link rel="stylesheet" href="css/site.css">
-    </head>
-    <body>
-        <header>
-            <div class="container">
-                <div class="site-header">
-                    <a class="logo" href="index.html"><i class="material-icons">library_books</i></a>
-                    <a class="button icon-right" href="new.html"><span>New Entry</span> <i class="material-icons">add</i></a>
-                </div>
-            </div>
-        </header>
-        <section>
-            <div class="container">
-                <div class="entry-list">
-                    {% for enry in object_list %}
-                    <article>
-                        <h2><a href="detail.html">{{ entry.tile }}</a></h2>
-                        <time datetime="2016-01-31">{{ entry.date.strftime('%Y-%m-%d')}}</time>
-                    </article>
-                    {% endfor %}
-                    {% if page > 1 %}
-                      <a href="./?page={{ page - 1 }}">Prev</a>
-                    {% endif %}
-                    {% if page < pagination.get_pages() %}
-                      <a href="./?page={{ page + 1 }}">Next</a>
-                    {% endif %}
-                </div>
-            </div>
-        </section>
-        <footer>
-            <div>
-                &copy; MyJournal
-            </div>
-        </footer>
-    </body>
-</html>
+{% extends "layout.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content%}
+    <div class="entry-list">
+        {% if entries or object_list %}
+            {% for enry in object_list %}
+            <article>
+                <h2><a href="detail.html">{{ entry.tile }}</a></h2>
+                <time datetime="2016-01-31">{{ entry.date.strftime('%Y-%m-%d')}}</time>
+            </article>
+            {% endfor %}
+            {% if page > 1 %}
+              <a href="./?page={{ page - 1 }}">Prev</a>
+            {% endif %}
+            {% if page < pagination.get_pages() %}
+              <a href="./?page={{ page + 1 }}">Next</a>
+            {% endif %}
+        {% else %}
+            <p>No entries found!</p>
+        {% endif %}
+    </div>
+{% endblock %}
