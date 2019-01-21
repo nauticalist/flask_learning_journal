@@ -8,6 +8,7 @@ from playhouse.flask_utils import object_list
 import config
 import models
 import forms
+import helpers
 
 
 app = Flask(__name__)
@@ -86,6 +87,7 @@ def index():
 def entry():
     form = forms.EntryForm()
     if form.validate_on_submit():
+        # Create entry
         models.Entry.create(
             user=g.user._get_current_object(),
             slug=form.slug.data,
@@ -94,10 +96,41 @@ def entry():
             time_spent=form.time_spent.data,
             subjects=form.subjects.data.strip(),
             resources=form.resources.data.strip()
-            )
+        )
+        # get created entry
+        created_entry = models.Entry.get(
+            models.Entry.slug == form.slug.data)
+        # Create tags if not exists
+        tags = helpers.split_tags(form.tags.data)
+        for tag in tags:
+            # models.Tag.create_tag_if_not_exists(tag)
+            if not models.Tag.select().where(models.Tag.tag == tag):
+                models.Tag.create(
+                    tag=tag
+                )
+            # Assign tags to entry
+            created_tag = models.Tag.get(models.Tag.tag == tag)
+            models.TagEntry.create(
+                   tag=created_tag,
+                   entry=created_entry
+                )
         flash('Entry created!', 'success')
         return redirect(url_for('index'))
     return render_template('new.html', form=form)
+
+
+@app.route('/tags', methods=('GET', 'POST'))
+@login_required
+def tags():
+    form = forms.TagForm()
+    tags = models.Tag.select()
+    if form.validate_on_submit():
+        models.Tag.create(
+            tag=form.tag.data
+        )
+        flash('Tag created!', 'success')
+        return redirect(url_for('tags'))
+    return render_template('tags.html', form=form, tags=tags)
 
 
 @app.errorhandler(404)

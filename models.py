@@ -53,6 +53,13 @@ class Tag(Model):
     class Meta:
         database = DATABASE
 
+    @classmethod
+    def create_tag_if_not_exists(cls, tag):
+        if not (Tag.select().where(Tag.tag == tag)):
+            Tag.create(
+                tag=tag
+            )
+
 
 class TagEntry(Model):
     tag = ForeignKeyField(Tag, backref='tags')

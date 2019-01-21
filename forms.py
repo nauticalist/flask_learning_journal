@@ -9,14 +9,9 @@ from wtforms.validators import (DataRequired, Regexp, ValidationError,
 from models import Tag
 
 
-# def get_tags():
-#     tags = [(Tag, Tag) for Tag in Tag.select()]
-#     return tags
-
-
 def tag_exists(form, field):
     if Tag.select().where(Tag.tag == field.data).exists():
-        raise ValidationError('Tag already exists.')
+        pass
 
 
 class LoginForm(Form):
@@ -32,10 +27,10 @@ class LoginForm(Form):
 
 class EntryForm(Form):
     title = StringField(
-        'Title',
+        'Title*',
         validators=[DataRequired(), Length(min=3, max=100)])
     slug = StringField(
-        'URL Slug',
+        'URL Slug*',
         validators=[
             DataRequired(),
             Length(min=3, max=50),
@@ -46,18 +41,21 @@ class EntryForm(Form):
             )]
     )
     date = DateField(
-        'Date',
-        validators=[DataRequired])
+        'Date (DD/MM/YYYY)*',
+        format='%d/%m/%Y',
+        validators=[DataRequired(
+            message="Please enter a valid date.")])
     time_spent = IntegerField(
-        'Time spent',
-        validators=[DataRequired])
+        'Time spent (Minutes)*',
+        validators=[DataRequired(message="Please enter a valid number.")])
     subjects = TextAreaField(
-        'What You Learned',
-        validators=[DataRequired])
+        'What You Learned*',
+        validators=[DataRequired()])
     resources = TextAreaField(
         'Resources to Remember',
         validators=[])
-    # tags = SelectMultipleField(choices=get_tags())
+    tags = StringField(
+        'Tags (Seperate tags with comma)')
 
 
 class TagForm(Form):
