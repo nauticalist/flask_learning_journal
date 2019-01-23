@@ -74,10 +74,24 @@ def logout():
 
 
 @app.route('/')
-def index():
-    entries = models.Entry.select()
+@app.route('/entries')
+@app.route('/entries/<tag>')
+def index(tag=None):
+    if tag:
+        try:
+            tag = models.Tag.select().where(
+                models.Tag.tag**tag).get()
+        except models.DoesNotExist:
+            abort(404)
+
+        entries = models.Entry.get_entries_by_tag(tag)
+    else:
+        entries = models.Entry.select()
     if entries:
-        return object_list('index.html', entries)
+        return object_list('index.html',
+                           query=entries,
+                           context_variable='entries',
+                           paginate_by=10)
     else:
         return render_template('index.html', entries=entries)
 
@@ -103,17 +117,13 @@ def entry():
         # Create tags if not exists
         tags = helpers.split_tags(form.tags.data)
         for tag in tags:
-            # models.Tag.create_tag_if_not_exists(tag)
-            if not models.Tag.select().where(models.Tag.tag == tag):
-                models.Tag.create(
-                    tag=tag
-                )
+            models.Tag.create_tag_if_not_exists(tag.strip())
             # Assign tags to entry
             created_tag = models.Tag.get(models.Tag.tag == tag)
             models.TagEntry.create(
-                   tag=created_tag,
-                   entry=created_entry
-                )
+                tag=created_tag,
+                entry=created_entry
+            )
         flash('Entry created!', 'success')
         return redirect(url_for('index'))
     return render_template('new.html', form=form)

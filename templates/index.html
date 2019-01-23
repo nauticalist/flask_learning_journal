@@ -4,11 +4,17 @@
 
 {% block content%}
     <div class="entry-list">
-        {% if entries or object_list %}
-            {% for entry in object_list %}
+        {% if entries %}
+            {% for entry in entries %}
             <article>
                 <h2><a href="detail.html">{{ entry.title }}</a></h2>
                 <time datetime="2016-01-31">{{ entry.date.strftime('%Y-%m-%d')}}</time>
+                <br>
+                {% if entry.get_tags() %}
+                    {% for tag in entry.get_tags() %}
+                        <a href="{{ url_for('index', tag=tag)}}" class="button">{{ tag.tag }}</a>
+                    {% endfor %}
+                {% endif %}
             </article>
             {% endfor %}
             {% if page > 1 %}

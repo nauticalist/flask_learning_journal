@@ -46,6 +46,25 @@ class Entry(Model):
         database = DATABASE
         order_by = ('-timestamp',)
 
+    @classmethod
+    def get_entries_by_tag(cls, tag):
+        """
+        Get entries by tags
+        """
+        entries = Entry.select().join(
+            TagEntry, on=TagEntry.entry
+        ).where(
+            TagEntry.tag == tag
+        )
+        return entries
+
+    def get_tags(self):
+        return Entry.select().join(
+                TagEntry, on=TagEntry.tag
+            ).where(
+                TagEntry.entry == self
+            )
+
 
 class Tag(Model):
     tag = CharField(unique=True, max_length=100)
@@ -55,7 +74,10 @@ class Tag(Model):
 
     @classmethod
     def create_tag_if_not_exists(cls, tag):
-        if not (Tag.select().where(Tag.tag == tag)):
+        """
+        Create a tag if not exists
+        """
+        if Tag.get_or_none(Tag.tag == tag) is None:
             Tag.create(
                 tag=tag
             )
@@ -64,7 +86,6 @@ class Tag(Model):
 class TagEntry(Model):
     tag = ForeignKeyField(Tag, backref='tags')
     entry = ForeignKeyField(Entry, backref='entries')
-
 
     class Meta:
         database = DATABASE
