@@ -1,5 +1,5 @@
 from flask import (Flask, g, render_template, flash, redirect, url_for,
-                   abort)
+                   abort, request)
 from flask_bcrypt import check_password_hash
 from flask_login import (LoginManager, login_user, logout_user,
                          login_required, current_user)
@@ -21,6 +21,9 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(userid):
+    """
+    Get logged in users info
+    """
     try:
         return models.User.get(models.User.id == userid)
     except models.DoesNotExist:
@@ -48,6 +51,9 @@ def after_request(response):
 
 @app.route('/login', methods=('GET', 'POST'))
 def login():
+    """
+    Login controller
+    """
     form = forms.LoginForm()
     if form.validate_on_submit():
         try:
@@ -68,6 +74,9 @@ def login():
 @app.route('/logout')
 @login_required
 def logout():
+    """
+    Log out current user
+    """
     logout_user()
     flash("You've been logged out! Come back soon!", "success")
     return redirect(url_for('index'))
@@ -75,8 +84,11 @@ def logout():
 
 @app.route('/')
 @app.route('/entries')
-@app.route('/entries/<tag>')
+@app.route('/tags/<tag>')
 def index(tag=None):
+    """
+    List all entries by tag if supplied
+    """
     if tag:
         try:
             tag = models.Tag.select().where(
@@ -96,6 +108,17 @@ def index(tag=None):
         return render_template('index.html', entries=entries)
 
 
+@app.route('/entries/<slug>')
+def view(slug):
+    """
+    View entry and its tags
+    """
+    entry = models.Entry.get_or_none(models.Entry.slug == slug)
+    if entry is None:
+        abort(404)
+    return render_template('detail.html', entry=entry)
+
+
 @app.route('/entry', methods=('GET', 'POST'))
 @login_required
 def entry():
@@ -104,7 +127,7 @@ def entry():
         # Create entry
         models.Entry.create(
             user=g.user._get_current_object(),
-            slug=form.slug.data,
+            slug=helpers.slugify(form.title.data),
             title=form.title.data,
             date=form.date.data,
             time_spent=form.time_spent.data,
@@ -113,15 +136,15 @@ def entry():
         )
         # get created entry
         created_entry = models.Entry.get(
-            models.Entry.slug == form.slug.data)
+            models.Entry.slug == helpers.slugify(form.title.data))
         # Create tags if not exists
         tags = helpers.split_tags(form.tags.data)
         for tag in tags:
-            models.Tag.create_tag_if_not_exists(tag.strip())
+            models.Tag.create_tag_if_not_exists(tag.strip().lower())
             # Assign tags to entry
-            created_tag = models.Tag.get(models.Tag.tag == tag)
+            entrytags = models.Tag.get(models.Tag.tag == tag.strip().lower())
             models.TagEntry.create(
-                tag=created_tag,
+                tag=entrytags,
                 entry=created_entry
             )
         flash('Entry created!', 'success')
@@ -129,22 +152,69 @@ def entry():
     return render_template('new.html', form=form)
 
 
-@app.route('/tags', methods=('GET', 'POST'))
+@app.route('/entry/edit/<slug>', methods=('GET', 'POST'))
 @login_required
-def tags():
-    form = forms.TagForm()
-    tags = models.Tag.select()
+def edit(slug):
+    """
+    Edit a journal entry
+    """
+    # Get entry data if entry exists
+    entry = models.Entry.get_or_none(models.Entry.slug == slug)
+    if entry is None:
+        abort(404)
+    # Generate form
+    form = forms.EntryForm(obj=entry)
+    if request.method == 'GET':
+        form.tags.data = helpers.join_tags(
+            [tag.tag for tag in entry.get_tags()])
+        return render_template('edit.html', form=form, entry=entry)
     if form.validate_on_submit():
-        models.Tag.create(
-            tag=form.tag.data
-        )
-        flash('Tag created!', 'success')
-        return redirect(url_for('tags'))
-    return render_template('tags.html', form=form, tags=tags)
+        # Create entry
+        models.Entry.update(
+            user=g.user._get_current_object(),
+            slug=helpers.slugify(form.title.data),
+            title=form.title.data,
+            date=form.date.data,
+            time_spent=form.time_spent.data,
+            subjects=form.subjects.data.strip(),
+            resources=form.resources.data.strip()
+        ).where(models.Entry.id == entry.id).execute()
+        # Refresh related tags
+        models.TagEntry.delete().where(
+            models.TagEntry.entry_id == entry.id).execute()
+        # Create tags if not exists
+        tags = helpers.split_tags(form.tags.data)
+        for tag in tags:
+            models.Tag.create_tag_if_not_exists(tag.strip().lower())
+            # Assign tags to entry
+            entrytags = models.Tag.get(models.Tag.tag == tag.strip().lower())
+            models.TagEntry.create_tagentry_if_not_exists(
+                tag_id=entrytags.id,
+                entry_id=entry.id
+            )
+        flash('Entry updated!', 'success')
+        return redirect(url_for('index'))
+
+
+@app.route('/entry/delete/<slug>')
+@login_required
+def delete(slug):
+    """
+    Delete requested entry with tag data
+    """
+    entry = models.Entry.get(models.Entry.slug == slug)
+    models.TagEntry.delete().where(
+        models.TagEntry.entry_id == entry.id).execute()
+    entry.delete_instance()
+    flash("Entry deleted!")
+    return redirect(url_for('index'))
 
 
 @app.errorhandler(404)
 def not_found(error):
+    """
+    Display this page when 404 error
+    """
     return render_template('404.html'), 404
 
 

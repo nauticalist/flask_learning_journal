@@ -10,6 +10,9 @@ DATABASE = SqliteDatabase(config.DB_NAME)
 
 
 class User(UserMixin, Model):
+    """
+    User Model
+    """
     username = CharField(unique=True)
     email = CharField(unique=True)
     password = CharField(max_length=100)
@@ -33,6 +36,9 @@ class User(UserMixin, Model):
 
 
 class Entry(Model):
+    """
+    Entry model
+    """
     timestamp = DateTimeField(default=datetime.datetime.now)
     user = ForeignKeyField(User, backref='entries')
     slug = CharField(unique=True, max_length=50)
@@ -59,11 +65,11 @@ class Entry(Model):
         return entries
 
     def get_tags(self):
-        return Entry.select().join(
-                TagEntry, on=TagEntry.tag
-            ).where(
-                TagEntry.entry == self
-            )
+        return Tag.select().join(
+            TagEntry, on=TagEntry.tag
+        ).where(
+            TagEntry.entry == self
+        )
 
 
 class Tag(Model):
@@ -84,6 +90,9 @@ class Tag(Model):
 
 
 class TagEntry(Model):
+    """
+    Tag - Entry relationship model
+    """
     tag = ForeignKeyField(Tag, backref='tags')
     entry = ForeignKeyField(Entry, backref='entries')
 
@@ -92,6 +101,18 @@ class TagEntry(Model):
         indexes = (
             (('entry', 'tag'), True),
         )
+
+    @classmethod
+    def create_tagentry_if_not_exists(cls, tag_id, entry_id):
+        """
+        Prevent duplicate entries
+        """
+        if TagEntry.get_or_none(TagEntry.tag_id == tag_id,
+                                TagEntry.entry_id == entry_id) is None:
+            TagEntry.create(
+                tag_id=tag_id,
+                entry_id=entry_id
+            )
 
 
 def initialize():

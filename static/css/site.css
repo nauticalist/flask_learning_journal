@@ -59,6 +59,8 @@ footer {
 .button.icon-right {
 	padding-right: 30px;
 	top: -10px;
+	margin-right: 5px;
+	margin-left: 5px;
 }
 .button.icon-left {
 	padding-left: 30px;

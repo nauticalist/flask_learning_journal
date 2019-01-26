@@ -7,12 +7,13 @@
         {% if entries %}
             {% for entry in entries %}
             <article>
-                <h2><a href="detail.html">{{ entry.title }}</a></h2>
-                <time datetime="2016-01-31">{{ entry.date.strftime('%Y-%m-%d')}}</time>
+                <h2><a href="{{ url_for('view', slug=entry.slug) }}">{{ entry.title }}</a></h2>
+                <time datetime="2016-01-31">{{ entry.date.strftime('%d/%m/%Y') }}</time>
+                <br>
                 <br>
                 {% if entry.get_tags() %}
                     {% for tag in entry.get_tags() %}
-                        <a href="{{ url_for('index', tag=tag)}}" class="button">{{ tag.tag }}</a>
+                        <a href="{{ url_for('index', tag=tag.tag)}}" class="button">{{ tag.tag }}</a>
                     {% endfor %}
                 {% endif %}
             </article>

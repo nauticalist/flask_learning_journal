@@ -1,10 +1,7 @@
-from datetime import datetime
-
 from flask_wtf import FlaskForm as Form
 from wtforms import (StringField, PasswordField, TextAreaField, DateField,
-                     IntegerField, SelectMultipleField)
-from wtforms.validators import (DataRequired, Regexp, ValidationError,
-                                Email, Length, EqualTo)
+                     IntegerField)
+from wtforms.validators import (DataRequired, Regexp, Email, Length)
 
 from models import Tag
 
@@ -29,17 +26,6 @@ class EntryForm(Form):
     title = StringField(
         'Title*',
         validators=[DataRequired(), Length(min=3, max=100)])
-    slug = StringField(
-        'URL Slug*',
-        validators=[
-            DataRequired(),
-            Length(min=3, max=50),
-            Regexp(
-                r'^[a-zA-Z0-9_-]+$',
-                message=("Url slug should be letters, "
-                         "numbers, dash and underscores only.")
-            )]
-    )
     date = DateField(
         'Date (DD/MM/YYYY)*',
         format='%d/%m/%Y',
@@ -56,6 +42,12 @@ class EntryForm(Form):
         validators=[])
     tags = StringField(
         'Tags (Seperate tags with comma)')
+    validators = [
+        Regexp(
+            r'^[a-zA-Z0-9,]+$',
+            message=("tags should be letters, "
+                     "and should be seperated by comma.")
+        )]
 
 
 class TagForm(Form):
