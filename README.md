@@ -1,4 +1,4 @@
-# Work Log with a Database
+# Flask Learning Journal
 ---
 
 Treehouse Techdegree Project 5
@@ -43,3 +43,5 @@ source .env/bin/activate
 pip install -r requirements.txt
 python app.py
 ```
+
+If you didn't make any changes on config.py file then just visit the url : http://127.0.0.1:8080/
